@@ -24,21 +24,29 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = 0, 0
         self.jumping = False
+        self.onStair = False
         self.onTalk = False
         self.toDraw = True
-        self.pos = vec(0,0)
+        self.pos = vec(0,-100)
+        self.posScene = vec(0,0)
         self.vel = vec(0,0)
         self.acc = vec(0,0)
     
     def update(self):
         self.acc = vec(0,PLAYER_GRAV)
+        hitStair = pg.sprite.spritecollide(self, self.game.stairs, False)
         keys = pg.key.get_pressed()
         if not self.onTalk:
             if keys[pg.K_UP]:
-                hits = pg.sprite.spritecollide(self, self.game.stairs, False)
-                if hits:
-                    pass
-                self.jump()
+                if hitStair:
+                    self.onStair = True
+                    self.vel.y = -3
+                else:
+                    self.jump()
+                    self.onStair = False
+            if keys[pg.K_DOWN]:
+                if hitStair:
+                    self.vel.y = 3
             if keys[pg.K_LEFT]:
                 self.acc.x = -PLAYER_ACC
             elif keys[pg.K_RIGHT]:
@@ -48,6 +56,7 @@ class Player(pg.sprite.Sprite):
         self.acc.x += (self.vel.x * PLAYER_FRICTION)
         self.vel += self.acc
         self.pos += self.vel
+        self.posScene = (int(self.pos.x / 32), int(self.pos.y / 32))
         self.rect.midbottom = self.pos
         #print ("player pos", self.pos)
     
@@ -72,7 +81,7 @@ class Player(pg.sprite.Sprite):
             self.rect.x -= 1
             if hits and self.pos.y < hits[0].rect.bottom:
                 self.jumping = True
-                self.vel.y -= 10
+                self.vel.y -= 12
 
 # -- Strutures --
 class Platform(pg.sprite.Sprite):

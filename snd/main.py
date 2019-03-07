@@ -3,6 +3,7 @@ import pygame as pg
 from settings import *
 from sprites import *
 from scenes import *
+from bot import *
 
 class Game:
     vec = pg.math.Vector2
@@ -27,42 +28,48 @@ class Game:
         self.walls = pg.sprite.Group()
         self.stairs = pg.sprite.Group()
         self.npcs = pg.sprite.Group()
-        
-        self.p = Platform(512, 100, 1024, 20)
-        self.all_sprites.add(self.p)
-        self.platforms.add(self.p)
-        self.all_obj_scene.append(self.p)
-        self.w = Wall(380, 100, 20, 100)
-        self.all_sprites.add(self.w)
-        self.walls.add(self.w)
-        self.all_obj_scene.append(self.w)
-        self.pp = Platform(340, 5, 100, 20)
-        self.all_sprites.add(self.pp)
-        self.platforms.add(self.pp)
-        self.all_obj_scene.append(self.pp)
-        self.st = Stair(100, 80, 200, 150)
-        self.all_sprites.add(self.st)
-        self.stairs.add(self.st)
-        self.all_obj_scene.append(self.st)
 
-        teste = ["oi Goxtoso como vc vai?\nVc vem sempre aqui seu lindo cheiroso\nQue belo programador vc é", "uau\nnao é que funcionou mesmo?\nquem diria"]
+        self.player = Player(self)
+        self.all_obj_scene.append(self.player)
+        self.all_sprites.add(self.player)
+        
+        for y in range(0,len(scene)):
+            for x in range(0, len(scene[y])):
+                if scene[y][x] == 0:
+                    pass
+                elif scene[y][x] == 1:
+                    self.p = Platform((32*x),(32*y), 31, 31)
+                    self.all_sprites.add(self.p)
+                    self.platforms.add(self.p)
+                    self.all_obj_scene.append(self.p)
+                elif scene[y][x] == 2:
+                    self.w = Wall((32*x),(32*y), 32, 32)
+                    self.all_sprites.add(self.w)
+                    self.walls.add(self.w)
+                    self.all_obj_scene.append(self.w)
+
+        self.bot = Bot(500, -100, self.player, self)
+        self.all_sprites.add(self.bot)
+        self.all_obj_scene.append(self.bot)
+
+        """
+        self.botshadowwall = BotShadowWall(self.bot)
+        self.all_sprites.add(self.botshadowwall)
+        self.all_obj_scene.append(self.botshadowwall)
+
+        self.botshadowplat = BotShadowPlatform(self.bot)
+        self.all_sprites.add(self.botshadowplat)
+        self.all_obj_scene.append(self.botshadowplat)
+        """
+
+        teste = ["Ola, tudo bem?\n:3", "Peidei"]
         self.npc = Npc("Roberto", 300, 80, teste)
         self.all_sprites.add(self.npc)
         self.npcs.add(self.npc)
         self.all_obj_scene.append(self.npc)
 
-        #spawner game objs das scenes
-        #for obj in scene["objType"]:
-        #    obj =  objType(parameters, gameref)
-        #    self.all_sprites.add(obj)
-        #    self.objType.add(obj)
-
         self.mark = Mark()
         self.all_obj_scene.append(self.mark)
-
-        self.player = Player(self)
-        self.all_obj_scene.append(self.player)
-        self.all_sprites.add(self.player)
 
         self.msgbox = TextBlock(self.player, self.screen)
         self.all_sprites.add(self.msgbox)
@@ -87,6 +94,7 @@ class Game:
         platforms_hits = pg.sprite.spritecollide(self.player, self.platforms, False)
         self.player.rect.y -= 1
         if platforms_hits:
+            #print (len(platforms_hits))
             self.player.jumping = False
             if self.player.vel.y > 0:
                 if self.player.pos.y < platforms_hits[0].rect.bottom:
@@ -94,15 +102,14 @@ class Game:
                     self.player.vel.y = 0
             if self.player.vel.y < 0:
                 if self.player.pos.y > platforms_hits[0].rect.bottom:
-                    if self.player.pos.x < platforms_hits[0].rect.left or self.player.pos.x > platforms_hits[0].rect.right: pass
+                    print ("low")
+                    if (self.player.pos.x < platforms_hits[0].rect.left or self.player.pos.x > platforms_hits[0].rect.right) and len(platforms_hits) == 1: pass
                     else: self.player.vel.y = 0
-        
         # check if player hits a wall
         walls_hits = pg.sprite.spritecollide(self.player, self.walls, False)
         if walls_hits:
             self.player.pos.x -= self.player.vel.x
             self.player.vel.x = 0
-        
         # check if player hits a npc
         npcs_hits = pg.sprite.spritecollide(self.player, self.npcs, False)
         if npcs_hits:
@@ -127,6 +134,7 @@ class Game:
                     hits = pg.sprite.spritecollide(self.player, self.npcs, False)
                     if hits and not self.player.onTalk:
                         self.player.onTalk = True
+                        self.player.vel.x, self.player.vel.y = 0,0
                         self.msgbox.index = 0
                         self.msgbox.setMessage(hits[0].talk())
                         self.msgbox.message = self.msgbox.message.splitlines()
