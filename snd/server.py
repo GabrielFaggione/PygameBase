@@ -1,5 +1,6 @@
 import socket
 import pickle
+import time
 
 class Server():
     def __init__(self):
@@ -17,11 +18,9 @@ class Server():
             #    print ("New player online - name",c,", addr",addr)
             #elif c in self.players:
             data = pickle.loads(c)
-            print (data)
-            print (self.players)
-            self.server.sendto(b'Oie', addr)
-
-
+            self.players[addr] = data
+            data = pickle.dumps(self.players)
+            self.server.sendto(data, addr)
 
 if __name__ == "__main__":
     server = Server()
