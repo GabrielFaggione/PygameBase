@@ -27,7 +27,7 @@ class Player(pg.sprite.Sprite):
         self.onStair = False
         self.onTalk = False
         self.toDraw = True
-        self.pos = vec(0,-100)
+        self.pos = vec(100,1000)
         self.posScene = vec(0,0)
         self.vel = vec(0,0)
         self.acc = vec(0,0)

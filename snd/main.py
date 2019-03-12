@@ -38,7 +38,7 @@ class Game:
                 if scene[y][x] == 0:
                     pass
                 elif scene[y][x] == 1:
-                    self.p = Platform((32*x),(32*y), 31, 31)
+                    self.p = Platform((32*x),(32*y), 32, 32)
                     self.all_sprites.add(self.p)
                     self.platforms.add(self.p)
                     self.all_obj_scene.append(self.p)
@@ -48,19 +48,13 @@ class Game:
                     self.walls.add(self.w)
                     self.all_obj_scene.append(self.w)
 
-        self.bot = Bot(500, -100, self.player, self)
+        self.bot = Bot(100, 1000, self.player, self)
         self.all_sprites.add(self.bot)
         self.all_obj_scene.append(self.bot)
-
-        """
-        self.botshadowwall = BotShadowWall(self.bot)
-        self.all_sprites.add(self.botshadowwall)
-        self.all_obj_scene.append(self.botshadowwall)
-
-        self.botshadowplat = BotShadowPlatform(self.bot)
-        self.all_sprites.add(self.botshadowplat)
-        self.all_obj_scene.append(self.botshadowplat)
-        """
+    
+        self.bot = Bot(1625, 1000, self.player, self)
+        self.all_sprites.add(self.bot)
+        self.all_obj_scene.append(self.bot)
 
         teste = ["Ola, tudo bem?\n:3", "Peidei"]
         self.npc = Npc("Roberto", 300, 80, teste)
@@ -87,6 +81,7 @@ class Game:
             self.draw()
     
     def update(self):
+        print (self.player.pos)
         # Game Loop - Update
         self.all_sprites.update()
         # check if player hits a platform
@@ -94,7 +89,6 @@ class Game:
         platforms_hits = pg.sprite.spritecollide(self.player, self.platforms, False)
         self.player.rect.y -= 1
         if platforms_hits:
-            #print (len(platforms_hits))
             self.player.jumping = False
             if self.player.vel.y > 0:
                 if self.player.pos.y < platforms_hits[0].rect.bottom:
@@ -102,7 +96,6 @@ class Game:
                     self.player.vel.y = 0
             if self.player.vel.y < 0:
                 if self.player.pos.y > platforms_hits[0].rect.bottom:
-                    print ("low")
                     if (self.player.pos.x < platforms_hits[0].rect.left or self.player.pos.x > platforms_hits[0].rect.right) and len(platforms_hits) == 1: pass
                     else: self.player.vel.y = 0
         # check if player hits a wall

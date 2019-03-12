@@ -1,6 +1,8 @@
 # Bot classes
 from settings import *
+from scenes import *
 import pygame as pg
+from copy import copy, deepcopy
 
 vec = pg.math.Vector2
 
@@ -10,12 +12,15 @@ class Bot(pg.sprite.Sprite):
         self.image = pg.Surface((30,40))
         self.image.fill(WHITE)
         self.pos = vec(x,y)
+        self.posScene = (int(x/32), int(y/32))
+        self.dir = None
         self.vel = vec(0,0)
         self.acc = vec(0,0)
         self.minDistance = 50
         self.botAcc = 0.5
         self.botFric = -0.12
         self.jumping = False
+        self.onSearch = False
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -28,8 +33,6 @@ class Bot(pg.sprite.Sprite):
         self.toDraw = True
 
     def update(self):
-        #print ("pos bot", self.pos)
-        #print ("pos player", self.player.pos)
         self.acc = vec(0,PLAYER_GRAV)
         self.distanceToPlayer = (self.pos.distance_to(self.player.pos))
         self.vecToPlayer = (self.pos - self.player.pos)
@@ -38,11 +41,12 @@ class Bot(pg.sprite.Sprite):
             # control x bot accelerate
             if self.vecToPlayer.x < 0:
                 self.acc.x = self.botAcc
+                self.dir = "right"
             else:
                 self.acc.x = -self.botAcc
+                self.dir = "left"
             
-            # check if player is near to jump
-            if self.distanceToPlayer < (self.vel.x * self.predict * 2):
+            if self.player.pos.y < self.pos.y and self.distanceToPlayer < 150:
                 self.jump()
 
         # check if hits platform
@@ -53,8 +57,10 @@ class Bot(pg.sprite.Sprite):
             self.jumping = False
             if self.vel.y > 0:
                 if self.pos.y < platforms_hits[0].rect.bottom:
+                    self.posScene = (int(platforms_hits[0].rect.centerx / 32), int(platforms_hits[0].rect.centery / 32))
                     self.pos.y = platforms_hits[0].rect.top + 1
                     self.vel.y = 0
+                    self.checkNearPos()
             if self.vel.y < 0:
                 if self.pos.y > platforms_hits[0].rect.bottom:
                     if (self.pos.x < platforms_hits[0].rect.left or self.pos.x > platforms_hits[0].rect.right) and len(platforms_hits) == 1: pass
@@ -80,49 +86,19 @@ class Bot(pg.sprite.Sprite):
                 self.jumping = True
                 self.vel.y -= 12
 
+    def checkNearPos(self):
+        try:
+            if not self.jumping:
+                if self.dir == "left":
+                    diagonal = scene[self.posScene[1] + 1][self.posScene[0] - 1]
+                    nextblock = scene[self.posScene[1]][self.posScene[0] - 2]
+                    if diagonal == 0 or nextblock == 2:
+                        self.jump()
 
-class BotShadowWall(pg.sprite.Sprite):
-    def __init__(self, bot):
-        pg.sprite.Sprite.__init__(self)
-        self.image = pg.Surface((bot.rect.width,bot.rect.height))
-        self.image.fill(SOMECOLOR)
-        self.bot = bot
-        self.pos = vec(bot.pos.x,bot.pos.y)
-        self.rect = self.image.get_rect()
-        self.rect.x = bot.rect.x
-        self.rect.y = bot.rect.y
-        self.rect.midbottom = (self.rect.x,self.rect.y)
-        self.toDraw = False # change this
-    
-    def update(self):
-        self.pos = self.bot.pos + ((self.bot.vel.x * self.bot.predict, self.bot.vel.y))
-        self.rect.midbottom = self.pos
-        hit_wall = pg.sprite.spritecollide(self, self.bot.game.walls, False)
-        if hit_wall:
-            if self.bot.pos.y > self.bot.player.pos.y:
-                self.bot.jump()
-
-class BotShadowPlatform(pg.sprite.Sprite):
-    def __init__(self, bot):
-        pg.sprite.Sprite.__init__(self)
-        self.image = pg.Surface((bot.rect.width,bot.rect.height))
-        self.image.fill(SOMECOLOR)
-        self.bot = bot
-        self.pos = vec(bot.pos.x,bot.pos.y)
-        self.rect = self.image.get_rect()
-        self.rect.x = bot.rect.x
-        self.rect.y = bot.rect.y
-        self.rect.midbottom = (self.rect.x,self.rect.y)
-        self.platform = None
-        self.toDraw = False # change this
-    
-    def update(self):
-        if self.bot.jumping:
-            hit_plat = pg.sprite.spritecollide(self.bot, self.bot.game.platforms, False)
-            if hit_plat:
-                if self.bot.vel.y < 0 and self.bot.pos.y > hit_plat[0].rect.bottom:
-                    self.platform = hit_plat[0]
-
-
-    
-
+                elif self.dir == "right":
+                    diagonal = scene[self.posScene[1] + 1][self.posScene[0] + 1]
+                    nextblock = scene[self.posScene[1]][self.posScene[0] + 2]
+                    if diagonal == 0 or nextblock == 2:
+                        self.jump()
+        except IndexError:
+            pass
