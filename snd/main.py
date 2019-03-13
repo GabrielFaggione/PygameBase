@@ -1,13 +1,16 @@
 
 import pygame as pg
+import queue
 from settings import *
 from sprites import *
 from scenes import *
 from bot import *
+from mythread import *
+from client import *
 
 class Game:
     vec = pg.math.Vector2
-    def __init__(self):
+    def __init__(self, queue):
         # initialize game window, etc
         pg.init()
         pg.mixer.init()
@@ -18,6 +21,7 @@ class Game:
         self.cam = vec(WIDTH/2,HEIGHT/2)
         self.camMarge = 10.0
         self.font_name = pg.font.match_font(FONT_NAME)
+        self.q = queue
     
     def new(self):
         # start a new game
@@ -28,8 +32,9 @@ class Game:
         self.walls = pg.sprite.Group()
         self.stairs = pg.sprite.Group()
         self.npcs = pg.sprite.Group()
+        self.players = {}
 
-        self.player = Player(self)
+        self.player = Player(self, "Gabriel")
         self.all_obj_scene.append(self.player)
         self.all_sprites.add(self.player)
         
@@ -48,13 +53,9 @@ class Game:
                     self.walls.add(self.w)
                     self.all_obj_scene.append(self.w)
 
-        self.bot = Bot(100, 1000, self.player, self)
-        self.all_sprites.add(self.bot)
-        self.all_obj_scene.append(self.bot)
-    
-        self.bot = Bot(1625, 1000, self.player, self)
-        self.all_sprites.add(self.bot)
-        self.all_obj_scene.append(self.bot)
+        #self.bot = Bot(100, 1000, self.player, self)
+        #self.all_sprites.add(self.bot)
+        #self.all_obj_scene.append(self.bot)
 
         teste = ["Ola, tudo bem?\n:3", "Peidei"]
         self.npc = Npc("Roberto", 300, 80, teste)
@@ -79,9 +80,22 @@ class Game:
             self.events()
             self.update()
             self.draw()
+        pg.quit()
     
     def update(self):
-        print (self.player.pos)
+        # recv all players pos
+        if not self.q["client"].empty():
+            data = pickle.loads(self.q["client"].get())
+            for addr in data:
+                player = data[addr] # pick player
+                if player["name"] not in self.players:
+                    if player["name"] != self.player.name:
+                        self.players[player["name"]] = PlayerOnline(player["name"], player["pos"])
+                        self.all_obj_scene.append(self.players[player["name"]])
+                        self.all_sprites.add(self.players[player["name"]])
+                else:
+                    self.players[player["name"]].pos = player["pos"]
+                    print (self.players[player["name"]].pos)
         # Game Loop - Update
         self.all_sprites.update()
         # check if player hits a platform
@@ -112,6 +126,9 @@ class Game:
             self.mark.rect.midbottom = (self.mark.rect.x, self.mark.rect.y)
         else:
             self.mark.toDraw = False
+        
+        # send to serv player pos and attributes
+        self.q["game"].put([self.player.name, self.player.pos])
 
         self.cam.x -= self.player.vel.x
         self.cam.y = (WIDTH/3 - self.player.pos.y)
@@ -188,11 +205,19 @@ class Game:
                 x += width
             x += space
 
-game = Game()
-game.show_start_screen()
-while game.running:
-    game.new()
-    game.show_go_screen()
-pg.quit()
+if __name__ == "__main__":
+    gameQueue = queue.Queue(3)
+    clientQueue = queue.Queue(3)
+    q = {"game":gameQueue, "client": clientQueue}
+    client = Client(q)
+    game = Game(q)
+    threadClient = Thread(1, "client thread", client.startClient)
 
+    threadClient.start()
+
+    game.show_start_screen()
+    while game.running:
+        game.new()
+        game.show_go_screen()
+    pg.quit()
 

@@ -13,14 +13,11 @@ class Server():
         self.server.bind((self.host, self.port))
         while True:
             c, addr = self.server.recvfrom(1024) # recv a data, c == message and addr ip and port
-            #if c not in self.players:
-            #    self.players[c] = addr
-            #    print ("New player online - name",c,", addr",addr)
-            #elif c in self.players:
             data = pickle.loads(c)
-            self.players[addr] = data
+            self.players[addr] = {"name":data[0], "pos":data[1]}
             data = pickle.dumps(self.players)
             self.server.sendto(data, addr)
+            print (self.players)
 
 if __name__ == "__main__":
     server = Server()

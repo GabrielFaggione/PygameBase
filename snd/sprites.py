@@ -8,17 +8,18 @@ vec = pg.math.Vector2
 class SpriteSheet:
     # utility class for loading and parsing spritesheets
     def __init__(self, filename):
-        self.spritesheet = pygame.image.load(filename).convert()
+        self.spritesheet = pg.image.load(filename).convert()
 
     def get_image(self, x, y, width, height):
-        image = pygame.Surface((width, height))
+        image = pg.Surface((width, height))
         image.blit(self.spritesheet, (0,0), (x, y, width, height))
         return image
 
 class Player(pg.sprite.Sprite):
-    def __init__(self, game):
+    def __init__(self, game, name):
         pg.sprite.Sprite.__init__(self)
         self.game = game
+        self.name = name
         self.image = pg.Surface((30,40))
         self.image.fill(GREEN)
         self.rect = self.image.get_rect()
@@ -34,19 +35,10 @@ class Player(pg.sprite.Sprite):
     
     def update(self):
         self.acc = vec(0,PLAYER_GRAV)
-        hitStair = pg.sprite.spritecollide(self, self.game.stairs, False)
         keys = pg.key.get_pressed()
         if not self.onTalk:
             if keys[pg.K_UP]:
-                if hitStair:
-                    self.onStair = True
-                    self.vel.y = -3
-                else:
-                    self.jump()
-                    self.onStair = False
-            if keys[pg.K_DOWN]:
-                if hitStair:
-                    self.vel.y = 3
+                self.jump()
             if keys[pg.K_LEFT]:
                 self.acc.x = -PLAYER_ACC
             elif keys[pg.K_RIGHT]:
@@ -82,6 +74,22 @@ class Player(pg.sprite.Sprite):
             if hits and self.pos.y < hits[0].rect.bottom:
                 self.jumping = True
                 self.vel.y -= 12
+
+class PlayerOnline(pg.sprite.Sprite):
+    def __init__(self, name, pos):
+        pg.sprite.Sprite.__init__(self)
+        self.name = name
+        self.image = pg.Surface((30,40))
+        self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.center = pos.x, pos.y
+        self.toDraw = True
+        self.pos = vec(pos.x, pos.y)
+        self.online = False
+    
+    def update(self):
+        self.rect.midbottom = (self.pos.x, self.pos.y)
+        
 
 # -- Strutures --
 class Platform(pg.sprite.Sprite):
