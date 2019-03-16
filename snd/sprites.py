@@ -1,39 +1,40 @@
 # Sprite classes
 from settings import *
+from classes import *
 import pygame as pg
 from copy import copy
 
 vec = pg.math.Vector2
-
-class SpriteSheet:
-    # utility class for loading and parsing spritesheets
-    def __init__(self, filename):
-        self.spritesheet = pg.image.load(filename).convert()
-
-    def get_image(self, x, y, width, height):
-        image = pg.Surface((width, height))
-        image.blit(self.spritesheet, (0,0), (x, y, width, height))
-        return image
 
 class Player(pg.sprite.Sprite):
     def __init__(self, game, name):
         pg.sprite.Sprite.__init__(self)
         self.game = game
         self.name = name
-        self.image = pg.Surface((30,40))
-        self.image.fill(GREEN)
+        self.animator = Animator("Images/ceceil2.png", 16, 16, 4, 2)
+        self.animator.setNewAnimation("idle", [0,1], [250,250])
+        self.animator.setNewAnimation("walkRight", [6,7], [100,100])
+        self.animator.setNewAnimation("walkLeft", [4,5], [100,100])
+
+        self.image = (self.animator.animations[self.animator.currentAnimation][self.animator.currentSpriteNum])
+        self.image.set_colorkey(CHROMACOLOR)
+
         self.rect = self.image.get_rect()
         self.rect.center = 0, 0
+        self.currentMap = None
         self.jumping = False
         self.onStair = False
         self.onTalk = False
         self.toDraw = True
-        self.pos = vec(100,1000)
+        self.pos = vec(0,-64)
         self.posScene = vec(0,0)
         self.vel = vec(0,0)
         self.acc = vec(0,0)
     
     def update(self):
+        self.animator.update()
+        self.image = (self.animator.animations[self.animator.currentAnimation][self.animator.currentSpriteNum])
+        self.image.set_colorkey(CHROMACOLOR)
         self.acc = vec(0,PLAYER_GRAV)
         keys = pg.key.get_pressed()
         if not self.onTalk:
@@ -41,10 +42,16 @@ class Player(pg.sprite.Sprite):
                 self.jump()
             if keys[pg.K_LEFT]:
                 self.acc.x = -PLAYER_ACC
+                if self.animator.currentAnimation != "walkLeft":
+                    self.animator.setAnimation("walkLeft")
             elif keys[pg.K_RIGHT]:
                 self.acc.x = PLAYER_ACC
+                if self.animator.currentAnimation != "walkRight":
+                    self.animator.setAnimation("walkRight")
             else:
-                self.vel.x = 0
+                if self.animator.currentAnimation != "idle":
+                    self.animator.setAnimation("idle")
+                    self.vel.x = 0
         self.acc.x += (self.vel.x * PLAYER_FRICTION)
         self.vel += self.acc
         self.pos += self.vel

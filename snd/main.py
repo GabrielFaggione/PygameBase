@@ -34,21 +34,43 @@ class Game:
         self.npcs = pg.sprite.Group()
         self.players = {}
 
-        self.player = Player(self, "Gabriel")
+        self.player = Player(self, "Zeze")
+        self.player.currentMap = house_outside
         self.all_obj_scene.append(self.player)
         self.all_sprites.add(self.player)
+    
+        """
         
-        for y in range(0,len(scene)):
-            for x in range(0, len(scene[y])):
-                if scene[y][x] == 0:
+        for y in range(0,len(house_inside)):
+            for x in range(0, len(house_inside[y])):
+                if house_inside[y][x] == 0:
                     pass
-                elif scene[y][x] == 1:
+                elif house_inside[y][x] == 1:
                     self.p = Platform((32*x),(32*y), 32, 32)
                     self.all_sprites.add(self.p)
                     self.platforms.add(self.p)
                     self.all_obj_scene.append(self.p)
-                elif scene[y][x] == 2:
+                elif house_inside[y][x] == 2:
                     self.w = Wall((32*x),(32*y), 32, 32)
+                    self.all_sprites.add(self.w)
+                    self.walls.add(self.w)
+                    self.all_obj_scene.append(self.w)
+                print ("x = ", x*32, "y = ", y*32)
+        """
+        house_inside_height = -len(house_inside)*32
+        scene_height = -len(scene)*32
+        print (scene_height)
+        for y in range(0, len(scene)):
+            for x in range(0, len(scene[y])):
+                if scene[y][x] == 0:
+                    pass
+                elif scene[y][x] == 1:
+                    self.p = Platform((32*x),(32*y)+scene_height, 32, 32)
+                    self.all_sprites.add(self.p)
+                    self.platforms.add(self.p)
+                    self.all_obj_scene.append(self.p)
+                elif scene[y][x] == 2:
+                    self.w = Wall((32*x),(32*y)+scene_height, 32, 32)
                     self.all_sprites.add(self.w)
                     self.walls.add(self.w)
                     self.all_obj_scene.append(self.w)
@@ -84,18 +106,7 @@ class Game:
     
     def update(self):
         # recv all players pos
-        if not self.q["client"].empty():
-            data = pickle.loads(self.q["client"].get())
-            for addr in data:
-                player = data[addr] # pick player
-                if player["name"] not in self.players:
-                    if player["name"] != self.player.name:
-                        self.players[player["name"]] = PlayerOnline(player["name"], player["pos"])
-                        self.all_obj_scene.append(self.players[player["name"]])
-                        self.all_sprites.add(self.players[player["name"]])
-                else:
-                    self.players[player["name"]].pos = player["pos"]
-                    print (self.players[player["name"]].pos)
+        #self.checkPlayersOnline()
         # Game Loop - Update
         self.all_sprites.update()
         # check if player hits a platform
@@ -128,7 +139,7 @@ class Game:
             self.mark.toDraw = False
         
         # send to serv player pos and attributes
-        self.q["game"].put([self.player.name, self.player.pos])
+        #self.q["game"].put([self.player.name, self.player.pos])
 
         self.cam.x -= self.player.vel.x
         self.cam.y = (WIDTH/3 - self.player.pos.y)
@@ -157,7 +168,7 @@ class Game:
 
     def draw(self):
         #Game Loop - Draw
-        self.screen.fill(BLACK)
+        self.screen.fill(WHITE)
         #self.all_sprites.draw(self.screen)
         for i in self.all_obj_scene:
             if i.toDraw:
@@ -205,15 +216,28 @@ class Game:
                 x += width
             x += space
 
+    def checkPlayersOnline(self):
+        if not self.q["client"].empty():
+            data = pickle.loads(self.q["client"].get())
+            for addr in data:
+                player = data[addr] # pick player
+                if player["name"] not in self.players:
+                    if player["name"] != self.player.name:
+                        self.players[player["name"]] = PlayerOnline(player["name"], player["pos"])
+                        self.all_obj_scene.append(self.players[player["name"]])
+                        self.all_sprites.add(self.players[player["name"]])
+                else:
+                    self.players[player["name"]].pos = player["pos"]
+
 if __name__ == "__main__":
     gameQueue = queue.Queue(3)
     clientQueue = queue.Queue(3)
     q = {"game":gameQueue, "client": clientQueue}
-    client = Client(q)
+    #client = Client(q)
     game = Game(q)
-    threadClient = Thread(1, "client thread", client.startClient)
+    #threadClient = Thread(1, "client thread", client.startClient)
 
-    threadClient.start()
+    #threadClient.start()
 
     game.show_start_screen()
     while game.running:

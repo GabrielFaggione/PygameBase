@@ -14,10 +14,10 @@ class Server():
         while True:
             c, addr = self.server.recvfrom(1024) # recv a data, c == message and addr ip and port
             data = pickle.loads(c)
-            self.players[addr] = {"name":data[0], "pos":data[1]}
+            if data != None:
+                self.players[addr] = {"name":data[0], "pos":data[1]}
             data = pickle.dumps(self.players)
             self.server.sendto(data, addr)
-            print (self.players)
 
 if __name__ == "__main__":
     server = Server()
