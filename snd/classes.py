@@ -51,4 +51,14 @@ class Animator(SpriteSheet):
                 self.currentSpriteNum += 1
             self.call = pg.time.get_ticks()
 
+class Scene():
+    padding = 0
+    def __init__(self, name, tiledmap):
+        self.map = tiledmap
+        self.height = len(self.map)*32
+        self.width = len(self.map[0])*32
+        self.platforms = pg.sprite.Group()
+        self.walls = pg.sprite.Group()
+        self.padding += self.width
+        print (self.width)
         

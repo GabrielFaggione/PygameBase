@@ -27,6 +27,7 @@ class Game:
         # start a new game
         self.all_obj_scene = []
         self.all_obj_ui = []
+        self.scenes = []
         self.all_sprites = pg.sprite.Group()
         self.platforms = pg.sprite.Group()
         self.walls = pg.sprite.Group()
@@ -39,41 +40,28 @@ class Game:
         self.all_obj_scene.append(self.player)
         self.all_sprites.add(self.player)
     
-        """
-        
-        for y in range(0,len(house_inside)):
-            for x in range(0, len(house_inside[y])):
-                if house_inside[y][x] == 0:
-                    pass
-                elif house_inside[y][x] == 1:
-                    self.p = Platform((32*x),(32*y), 32, 32)
-                    self.all_sprites.add(self.p)
-                    self.platforms.add(self.p)
-                    self.all_obj_scene.append(self.p)
-                elif house_inside[y][x] == 2:
-                    self.w = Wall((32*x),(32*y), 32, 32)
-                    self.all_sprites.add(self.w)
-                    self.walls.add(self.w)
-                    self.all_obj_scene.append(self.w)
-                print ("x = ", x*32, "y = ", y*32)
-        """
-        house_inside_height = -len(house_inside)*32
-        scene_height = -len(scene)*32
-        print (scene_height)
-        for y in range(0, len(scene)):
-            for x in range(0, len(scene[y])):
-                if scene[y][x] == 0:
-                    pass
-                elif scene[y][x] == 1:
-                    self.p = Platform((32*x),(32*y)+scene_height, 32, 32)
-                    self.all_sprites.add(self.p)
-                    self.platforms.add(self.p)
-                    self.all_obj_scene.append(self.p)
-                elif scene[y][x] == 2:
-                    self.w = Wall((32*x),(32*y)+scene_height, 32, 32)
-                    self.all_sprites.add(self.w)
-                    self.walls.add(self.w)
-                    self.all_obj_scene.append(self.w)
+        self.house = Scene("House", house_inside)
+        self.school = Scene("School", school)
+        self.scenes.append(self.house)
+        self.scenes.append(self.school)
+
+        padding = 0
+        for scene in self.scenes:
+            for y in range(0, len(scene.map)):
+                for x in range(0, len(scene.map[y])):
+                    if scene.map[y][x] == 0:
+                        pass
+                    elif scene.map[y][x] == 1:
+                        self.p = Platform(padding + (32*x), (32*y) - scene.height, 32, 32)
+                        self.all_sprites.add(self.p)
+                        self.platforms.add(self.p)
+                        self.all_obj_scene.append(self.p)
+                    elif scene.map[y][x] == 2:
+                        self.w = Wall(padding + (32*x), (32*y) - scene.height, 32, 32)
+                        self.all_sprites.add(self.w)
+                        self.walls.add(self.w)
+                        self.all_obj_scene.append(self.w)
+            padding += scene.width
 
         #self.bot = Bot(100, 1000, self.player, self)
         #self.all_sprites.add(self.bot)
