@@ -22,50 +22,43 @@ class Game:
         self.camMarge = 10.0
         self.font_name = pg.font.match_font(FONT_NAME)
         self.q = queue
+        #load spritesheet
+        Platform.spritesheet = SpriteSheet("Images/background.png")
+        Wall.spritesheet = SpriteSheet("Images/background.png")
+        ObjDraw.spritesheet = SpriteSheet("Images/background.png")
     
     def new(self):
         # start a new game
-        self.all_obj_scene = []
-        self.all_obj_ui = []
         self.scenes = []
+        self.all_obj_scene = []
+        self.all_obj_scene_tmp = []
         self.all_sprites = pg.sprite.Group()
+        self.all_sprites_tmp = pg.sprite.Group()
         self.platforms = pg.sprite.Group()
+        self.platforms_tmp = pg.sprite.Group()
         self.walls = pg.sprite.Group()
+        self.walls_tmp = pg.sprite.Group()
         self.stairs = pg.sprite.Group()
+        self.all_obj_ui = []
         self.npcs = pg.sprite.Group()
+        self.colliders = pg.sprite.Group()
         self.players = {}
-
-        self.player = Player(self, "Zeze")
-        self.player.currentMap = house_outside
-        self.all_obj_scene.append(self.player)
-        self.all_sprites.add(self.player)
+        self.tmpScene = None
     
-        self.house = Scene("House", house_inside)
-        self.school = Scene("School", school)
+        self.house = Scene("House", house_outside, 0, house_outside_sprite)
+        self.school = Scene("School", school, self.house.width)
         self.scenes.append(self.house)
         self.scenes.append(self.school)
 
         padding = 0
         for scene in self.scenes:
-            for y in range(0, len(scene.map)):
-                for x in range(0, len(scene.map[y])):
-                    if scene.map[y][x] == 0:
-                        pass
-                    elif scene.map[y][x] == 1:
-                        self.p = Platform(padding + (32*x), (32*y) - scene.height, 32, 32)
-                        self.all_sprites.add(self.p)
-                        self.platforms.add(self.p)
-                        self.all_obj_scene.append(self.p)
-                    elif scene.map[y][x] == 2:
-                        self.w = Wall(padding + (32*x), (32*y) - scene.height, 32, 32)
-                        self.all_sprites.add(self.w)
-                        self.walls.add(self.w)
-                        self.all_obj_scene.append(self.w)
+            self.drawScene(scene, padding)
             padding += scene.width
-
-        #self.bot = Bot(100, 1000, self.player, self)
-        #self.all_sprites.add(self.bot)
-        #self.all_obj_scene.append(self.bot)
+        
+        self.player = Player(self, "Zeze")
+        #self.all_obj_scene.append(self.player)
+        self.all_sprites.add(self.player)
+        self.player.currentMap["map"] = self.scenes[0]
 
         teste = ["Ola, tudo bem?\n:3", "Peidei"]
         self.npc = Npc("Roberto", 300, 80, teste)
@@ -139,6 +132,22 @@ class Game:
                 if self.playing: self.playing = False
                 self.running = False
             if event.type == pg.KEYDOWN:
+                if event.key == pg.K_a:
+                    hits = pg.sprite.spritecollide(self.player, self.colliders, False)
+                    if hits: 
+                        if self.tmpScene == None:
+                            self.tmpScene = Scene("tmp", hits[0].name, self.player.currentMap["map"].beginx, hits[0].test)
+                            self.drawScene(self.tmpScene, self.tmpScene.beginx, tmp=True)
+                        else:
+                            self.all_obj_scene_tmp = []
+                            self.platforms.remove(self.platforms_tmp)
+                            self.platforms_tmp.empty()
+                            self.walls.remove(self.walls_tmp)
+                            self.walls_tmp.empty()
+                            self.all_sprites.remove(self.all_sprites_tmp)
+                            self.all_sprites_tmp.empty()
+                            self.tmpScene = None          
+
                 if event.key == pg.K_z:
                     hits = pg.sprite.spritecollide(self.player, self.npcs, False)
                     if hits and not self.player.onTalk:
@@ -157,13 +166,18 @@ class Game:
     def draw(self):
         #Game Loop - Draw
         self.screen.fill(WHITE)
-        #self.all_sprites.draw(self.screen)
+        self.all_sprites.draw(self.screen)
+        
         for i in self.all_obj_scene:
             if i.toDraw:
                 self.screen.blit(i.image, (i.rect.x + self.cam.x , i.rect.y + self.cam.y))
         for i in self.all_obj_ui:
             if i.toDraw:
                 self.screen.blit(i.image, (i.rect.x, i.rect.y))
+        for i in self.all_obj_scene_tmp:
+            if i.toDraw:
+                self.screen.blit(i.image, (i.rect.x + self.cam.x , i.rect.y + self.cam.y))
+        self.screen.blit(self.player.image, (self.player.rect.x + self.cam.x , self.player.rect.y + self.cam.y))
         if self.player.onTalk:
             self.drawLine(self.npc.name, 36, BLACK, self.msgbox.rect.topleft[0], self.msgbox.rect.topleft[1]+25)
             self.drawMessage(22, RED, self.msgbox.rect.topleft[0], self.msgbox.rect.topleft[1])
@@ -216,6 +230,47 @@ class Game:
                         self.all_sprites.add(self.players[player["name"]])
                 else:
                     self.players[player["name"]].pos = player["pos"]
+    
+    def drawScene(self, scene, padding, tmp = False):
+        for y in range(0, len(scene.map)):
+            for x in range(0, len(scene.map[y])):
+                if scene.map[y][x] == 0:
+                    self.obj = ObjDraw(padding + (32*x), (32*y) - scene.height, 32, 32, scene.sprites[y][x])
+                    self.all_sprites.add(self.obj)
+                    if not tmp:
+                        self.all_obj_scene.append(self.obj)
+                    if tmp:
+                        self.all_obj_scene_tmp.append(self.obj)
+                        self.all_sprites_tmp.add(self.obj)
+
+                elif scene.map[y][x] == 1:
+                    self.p = Platform(padding + (32*x), (32*y) - scene.height, 32, 32, scene.sprites[y][x])
+                    self.all_sprites.add(self.p)
+                    self.platforms.add(self.p)
+                    if not tmp:
+                        self.all_obj_scene.append(self.p)
+                    if tmp:
+                        self.all_sprites_tmp.add(self.p)
+                        self.platforms_tmp.add(self.p)
+                        self.all_obj_scene_tmp.append(self.p)  
+
+                elif scene.map[y][x] == 2:
+                    self.w = Wall(padding + (32*x), (32*y) - scene.height, 32, 32, scene.sprites[y][x])
+                    self.all_sprites.add(self.w)
+                    self.walls.add(self.w)
+                    if not tmp:
+                        self.all_obj_scene.append(self.w)
+                    else:
+                        self.all_sprites_tmp.add(self.w)
+                        self.walls_tmp.add(self.w)
+                        self.all_obj_scene_tmp.append(self.w)                            
+                        
+                elif scene.map[y][x] == 3:
+                    self.c = Collider(padding + (32*x), (32*y) - scene.height, 32, 32, house_inside, house_inside_sprites)
+                    self.colliders.add(self.c)
+                    self.all_sprites.add(self.c)
+                    self.all_obj_scene.append(self.c)
+                        
 
 if __name__ == "__main__":
     gameQueue = queue.Queue(3)

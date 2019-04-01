@@ -21,7 +21,7 @@ class Player(pg.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect.center = 0, 0
-        self.currentMap = None
+        self.currentMap = {"indice":0, "map":None}
         self.jumping = False
         self.onStair = False
         self.onTalk = False
@@ -32,6 +32,11 @@ class Player(pg.sprite.Sprite):
         self.acc = vec(0,0)
     
     def update(self):
+        if self.pos.x > self.currentMap["map"].endx:
+            self.currentMap["indice"] += 1
+        elif self.pos.x < self.currentMap["map"].beginx:
+            self.currentMap["indice"] -= 1
+        self.currentMap["map"] = self.game.scenes[self.currentMap["indice"]]
         self.animator.update()
         self.image = (self.animator.animations[self.animator.currentAnimation][self.animator.currentSpriteNum])
         self.image.set_colorkey(CHROMACOLOR)
@@ -100,20 +105,31 @@ class PlayerOnline(pg.sprite.Sprite):
 
 # -- Strutures --
 class Platform(pg.sprite.Sprite):
-    def __init__(self, x, y, w, h):
+    spritesheet = None
+    def __init__(self, x, y, w, h, sprite):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.Surface((w,h))
-        self.image.fill(RED)
+        if sprite == 0:
+            self.image = pg.Surface((32,32))
+            self.image.fill(RED)
+        else:
+            self.image = self.spritesheet.get_image(sprite * 16, 0, 16, 16)
+            self.image.set_colorkey(CHROMACOLOR)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
         self.rect.midbottom = (self.rect.x,self.rect.y)
         self.toDraw = True
 class Wall(pg.sprite.Sprite):
-    def __init__(self, x, y, w, h):
+    spritesheet = None
+    def __init__(self, x, y, w, h, sprite):
         pg.sprite.Sprite.__init__(self)
-        self.image = pg.Surface((w,h))
-        self.image.fill(YELLOW)
+        if sprite == 0:
+            self.image = pg.Surface((32,32))
+            self.image.fill(BLACK)
+        else:
+            self.image = self.spritesheet.get_image(sprite * 16, 0, 16, 16)
+            self.image.set_colorkey(CHROMACOLOR)
+        #self.image.fill(YELLOW)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -124,6 +140,21 @@ class Stair(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self)
         self.image = pg.Surface((w,h))
         self.image.fill(LIGHTBLUE)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.rect.midbottom = (x,y)
+        self.toDraw = True
+class ObjDraw(pg.sprite.Sprite):
+    spritesheet = None
+    def __init__(self, x, y, w, h, sprite):
+        pg.sprite.Sprite.__init__(self)
+        if sprite == 0:
+            self.image = pg.Surface((32,32))
+            self.image.fill(WHITE)
+        else:
+            self.image = self.spritesheet.get_image(sprite * 16, 0, 16, 16)
+            self.image.set_colorkey(CHROMACOLOR)
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -188,5 +219,17 @@ class TextBlock(pg.sprite.Sprite):
     def setMessage(self, msg):
         self.message = msg
         
-
+class Collider(pg.sprite.Sprite):
+    def __init__(self, x, y, w, h, name, test):
+        pg.sprite.Sprite.__init__(self)
+        self.image = pg.Surface((w,h))
+        self.image.fill(GREEN)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.rect.midbottom = (self.rect.x,self.rect.y)
+        self.max_x = self.rect.right - 20
+        self.name = name
+        self.test = test
+        self.toDraw = True 
     
